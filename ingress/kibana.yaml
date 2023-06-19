@@ -1,0 +1,30 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: rahasak-elasticsearch
+  labels:
+    app: hulk
+spec:
+  version: 7.6.2
+  count: 1
+  http:
+   service:
+     metadata:
+       labels:
+         app: hulk
+       annotations:
+         # Comment out the following line if you are not using a VPC-native cluster
+         cloud.google.com/neg: '{"ingress": true}' 
+         beta.cloud.google.com/backend-config: '{"default": "hc-kb-test"}'
+  elasticsearchRef:
+    name: rahasak-elasticsearch
+  podTemplate:
+    spec:
+      containers:
+        - name: kibana
+          readinessProbe:
+            # Override the readiness probe as GCLB reuses it for its own healthchecks
+            httpGet:
+              scheme: HTTPS
+              path: "/login"
+              port: 5601

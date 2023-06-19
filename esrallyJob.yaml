@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: esrally
+  name: esrally
+  namespace: elastic
+spec:
+  template:
+    metadata:
+      labels:
+        app: esrally
+    spec:
+      containers:
+      - command:
+        - /usr/local/bin/esrally
+        - race
+        - --track=geonames
+        - --pipeline=benchmark-only
+        - --report-format=csv
+        - --report-file=/rally/.rally/results.csv
+        # - --target-hosts="10.127.0.30:80"
+        - --target-hosts=rahasak-elasticsearch-es-client:9200
+        image: elastic/rally
+        imagePullPolicy: Always
+        name: rally
+        volumeMounts:
+          - name: report
+            mountPath: /rally/.rally/logs
+      dnsPolicy: ClusterFirst
+      nodeName: gke-k8s01-pool01-30f14dd0-t0hl
+      restartPolicy: Never
+      volumes:
+        - name: report
+          hostPath:
+            path: /tmp

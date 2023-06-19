@@ -1,0 +1,74 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: rahasak-elasticsearch
+  labels:
+    app: hulk
+spec:
+  version: 7.6.2
+  http:
+    service:
+      metadata:
+        labels:
+          app: hulk
+        annotations:
+          # Comment out the following line if you are not using a VPC-native cluster
+          cloud.google.com/neg: '{"ingress": true}'
+          beta.cloud.google.com/backend-config: '{"default": "hc-test"}'
+  nodeSets:
+  - name: master
+    count: 1
+    config:
+      node.master: true
+      node.data: false
+      node.ingest: false
+      xpack.ml.enabled: true
+      node.store.allow_mmap: false
+      xpack.security.authc:
+        anonymous:
+          username: anon
+          roles: monitoring_user
+  - name: data
+    count: 3
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data # Do not change this name unless you set up a volume mount for the data path.
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+        storageClassName: standard
+    config:
+      node.master: false
+      node.data: true
+      node.ingest: false
+      xpack.ml.enabled: true
+      node.store.allow_mmap: false
+      xpack.security.authc:
+        anonymous:
+          username: anon
+          roles: monitoring_user
+    podTemplate:
+      spec:
+        containers:
+          - name: elasticsearch
+            # Override the readiness probe as GCLB reuses it for its own healthchecks
+            readinessProbe:
+              httpGet:
+                scheme: HTTPS
+                path: "/"
+                port: 9200
+  - name: client
+    count: 1
+    config:
+      node.master: false
+      node.data: false
+      node.ingest: true
+      xpack.ml.enabled: true
+      node.store.allow_mmap: false
+      xpack.security.authc:
+        anonymous:
+          username: anon
+          roles: monitoring_user

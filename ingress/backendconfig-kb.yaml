@@ -1,0 +1,10 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: hc-kb-test
+spec:
+  healthCheck:
+    timeoutSec: 1
+    type: HTTPS
+    requestPath: /login
+    port: 5601
